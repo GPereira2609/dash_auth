@@ -19,7 +19,7 @@ card_style = {
     'padding-left': '25px',
     'align-self': 'center',
     'display': 'flex',
-    'flex-direction': 'column'
+    'flex-direction': 'column',
 }
 
 def render_layout(login_state):
@@ -30,7 +30,9 @@ def render_layout(login_state):
         message = 'Senha incorreta'
     
     login = dbc.Card([
-        html.Legend("Login"),
+        html.Div([
+            html.H3("Login"),
+        ], style={"padding": "5px", "justify-content": "center", "display": "flex"}),
         dbc.Input(id="user_login", placeholder="Usuário", type="text"),
         dbc.Input(id="password_login", placeholder="Senha", type="password"),
         dbc.Button("Logar", id="login_button"),
@@ -38,7 +40,7 @@ def render_layout(login_state):
         html.Div([
             html.Label("Ou", style={"margin-right": "5px"}),
             dcc.Link("Registre-se", href="/register")
-        ], style={"padding": "20px", "justify-content": "center", "display": "flex"})
+        ], style={"padding": "20px", "justify-content": "center", "display": "flex", 'flex-direction': 'row'})
 
     ], style=card_style)
 

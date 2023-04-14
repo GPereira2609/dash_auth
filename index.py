@@ -7,7 +7,7 @@ import dash
 
 from app import *
 
-from pages import login, register, home
+from pages import login, register, home, sidebar
 from flask_login import current_user
 from sqlalchemy.orm import Session
 
@@ -71,7 +71,7 @@ def renderizar_paginas(pathname, login_state, register_state):
     if pathname == "/register":
         return register.render_layout(register_state)
     if pathname == '/home':
-        return home.render_layout("gb")
+        return home.render_layout('Gabr')
 
 if __name__ == "__main__":
     app.run_server(port=5000, debug=True)

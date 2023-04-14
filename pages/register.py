@@ -33,7 +33,9 @@ def render_layout(register_state):
         message
     
     register = dbc.Card([
-        html.Legend("Registrar"),
+        html.Div([
+            html.H3("Registro"),
+        ], style={"padding": "5px", "justify-content": "center", "display": "flex"}),
         dbc.Input(id="user_register", placeholder="Usuário", type="text"),
         dbc.Input(id="password_register", placeholder="Senha", type="password"),
         dbc.Input(id="email_register", placeholder="Email", type="email"),
@@ -41,7 +43,7 @@ def render_layout(register_state):
         html.Span(message, style={"text-align": 'center'}),
         html.Div([
             html.Label("Ou", style={"margin-right": "5px"}),
-            dcc.Link("Logue-se", href="/login")
+            dcc.Link("Login", href="/login")
         ], style={"padding": "20px", "justify-content": "center", "display": "flex"})
 
     ], style=card_style)
