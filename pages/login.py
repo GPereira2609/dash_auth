@@ -20,6 +20,11 @@ card_style = {
     'align-self': 'center',
     'display': 'flex',
     'flex-direction': 'column',
+    'background-color': 'white',
+    'border-radius': '5px',
+    'font-family': 'sans-serif',
+    'font-style': 'bold',
+    'justify-content': 'space-evenly'
 }
 
 def render_layout(login_state):
@@ -33,14 +38,17 @@ def render_layout(login_state):
         html.Div([
             html.H3("Login"),
         ], style={"padding": "5px", "justify-content": "center", "display": "flex"}),
-        dbc.Input(id="user_login", placeholder="Usuário", type="text"),
-        dbc.Input(id="password_login", placeholder="Senha", type="password"),
-        dbc.Button("Logar", id="login_button"),
+        html.Div([
+            dbc.Input(id="user_login", placeholder="Usuário", type="text", style={"margin-bottom": '10px'}),
+            dbc.Input(id="password_login", placeholder="Senha", type="password", style={"margin-bottom": '10px'}),
+            dbc.Button("Login", id="login_button"),
+        ], style={'display': 'flex', "flex-direction": 'column', 'justify-content': 'space-evenly', "margin": "10px", "padding": "10px"}),
+        
         html.Span(message, style={"text-align": 'center'}),
         html.Div([
             html.Label("Ou", style={"margin-right": "5px"}),
             dcc.Link("Registre-se", href="/register")
-        ], style={"padding": "20px", "justify-content": "center", "display": "flex", 'flex-direction': 'row'})
+        ], style={'margin': '10px', "padding": "10px", "justify-content": "center", "display": "flex", 'flex-direction': 'row'})
 
     ], style=card_style)
 
