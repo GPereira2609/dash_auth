@@ -33,7 +33,9 @@ def render_layout(login_state):
         message = 'Ocorreu algum erro'
     elif login_state == 'error_senha':
         message = 'Senha incorreta'
-    
+    elif login_state == 'error_nao_encontrado':
+        message = 'Usuário não existe'
+
     login = dbc.Card([
         html.Div([
             html.H3("Login"),
@@ -45,11 +47,7 @@ def render_layout(login_state):
         ], style={'display': 'flex', "flex-direction": 'column', 'justify-content': 'space-evenly', "margin": "10px", "padding": "10px"}),
         
         html.Span(message, style={"text-align": 'center'}),
-        html.Div([
-            html.Label("Ou", style={"margin-right": "5px"}),
-            dcc.Link("Registre-se", href="/register")
-        ], style={'margin': '10px', "padding": "10px", "justify-content": "center", "display": "flex", 'flex-direction': 'row'})
-
+       
     ], style=card_style)
 
     return login
@@ -66,15 +64,18 @@ def logar(n_clicks, user_login, password_login):
     if n_clicks == None:
         raise PreventUpdate
 
-    session = Session(engine)
-    rst = session.query(User).filter(User.nm_usr==f"'{text(user_login)}'")
-    user = rst[0]
-    # user = User.query.filter_by(nm_usr=f"'{text(user_login)}'").first()
-    if user and password_login is not None:
-        if check_password_hash(user.pwd_usr.replace("'", ""), password_login):
-            login_user(user)
-            return 'success'
+    try:
+        session = Session(engine)
+        rst = session.query(User).filter(User.nm_usr==f"'{text(user_login)}'")
+        user = rst[0]
+        # user = User.query.filter_by(nm_usr=f"'{text(user_login)}'").first()
+        if user and password_login is not None:
+            if check_password_hash(user.pwd_usr.replace("'", ""), password_login):
+                login_user(user)
+                return 'success'
+            else:
+                return 'error_senha'
         else:
-            return 'error_senha'
-    else:
-        return 'error'
+            return 'error'
+    except:
+        return 'error_nao_encontrado'

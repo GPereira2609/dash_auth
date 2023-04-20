@@ -4,6 +4,8 @@ from dash import html, dcc, dash_table, Input, Output
 from dash.exceptions import PreventUpdate
 from flask_login import logout_user
 
+from globals import *
+
 card_style = {
     'width': '500px',
     'min-height': '300px',
@@ -34,7 +36,7 @@ def render_layout(user):
             dbc.Row([
                 html.Div([
                     html.Div([
-                    dcc.Location(id="base_url"),
+                    dcc.Location(id="consultar_paradas_base_url"),
                     html.H3(username.replace("'", ""), style={"color": "white"}),
                     
                 ], style={'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'height': "100%"}),
@@ -45,7 +47,8 @@ def render_layout(user):
                             dbc.NavLink("Consultar paradas", href="/consultar_paradas", active="exact"),
                             dbc.NavLink("Apropriar paradas", href="/aprop_paradas", active="exact"),
                             dbc.NavLink("Consultar turno", href="/consultar_turno", active="exact"),
-                            dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact")
+                            dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact"),
+                            dbc.NavLink("Registrar usuário", href="/register", active="exact")
                         ], pills=True, vertical=False, id='nav')
                     ], style={"height": "100%", 'display': 'flex', 'flex-direction': 'column'}),
 
@@ -54,7 +57,7 @@ def render_layout(user):
                     ])
                 ], style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center'}),
                 
-            ], style={"height": '15%', 'width': '110vw', 'display': 'block', 'justify-content': 'space-evenly', 'background-color': '#298753'}),
+            ], style={"height": '15%', 'width': '105vw', 'display': 'block', 'justify-content': 'space-evenly', 'background-color': '#298753'}),
 
             dbc.Row([   
                 html.Div([
@@ -65,15 +68,15 @@ def render_layout(user):
                                 html.Legend("Processo/equipamento"),
                                 dbc.Row([
                                     dbc.Label("Processo: "),
-                                    dcc.Dropdown(options=["Via seca", "via umida", "SQL"], id="dropdown_processo")
+                                    dcc.Dropdown(options=popular_dropdown_processo_consultar_paradas(), id="dropdown_processo_consultar_paradas")
                             ]),
                                 dbc.Row([
                                     dbc.Label("Sistema: "),
-                                    dcc.Dropdown(options=["Via seca", "via umida", "SQL"], id="dropdown_sistema")
+                                    dcc.Dropdown(options=[], id="dropdown_sistema_consultar_paradas")
                             ]),
                                 dbc.Row([
                                     dbc.Label("Equipamento: "),
-                                    dcc.Dropdown(options=["Via seca", "via umida", "SQL"], id="dropdown_equipamento")
+                                    dcc.Dropdown(options=[], id="dropdown_equipamento_consultar_paradas")
                             ]),
                             ], style=card_style),
                             
@@ -84,12 +87,12 @@ def render_layout(user):
                                 html.Legend("Período"),
                                 dbc.Row([
                                     dbc.Label("Início: "),
-                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY")
+                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_inicio_consultar_paradas")
                             ]),
 
                                 dbc.Row([
                                     dbc.Label("Fim: "),
-                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY")
+                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_fim_consultar_paradas")
                             ]),
 
                                 dbc.Row([
@@ -120,3 +123,21 @@ def render_layout(user):
         ], style={'background-color': "white", 'height': '100vh', 'width': '100vw', 'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'width': '100vw'})
         
     return layout
+
+@app.callback(
+    Output("dropdown_sistema_consultar_paradas", "options"),
+    Input("dropdown_processo_consultar_paradas", "value")
+)
+def popular_dropdown_sistemas(value):
+    if value is None:
+        raise PreventUpdate
+    if value is not None:
+        return popular_dropdown_sistema_consultar_paradas(value)
+
+@app.callback(
+    Output("dropdown_equipamento_consultar_paradas", "options"),
+    Input("dropdown_processo_consultar_paradas", "value"),
+    Input("dropdown_sistema_consultar_paradas", "value")
+)
+def popular_dropdown_equipamento(value_processo, value_sistema):
+    

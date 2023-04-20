@@ -35,10 +35,9 @@ def load_user(user_id):
     # return User.query.get(int(user_id))
 
 @app.callback(
-    Output("base_url", "pathname", allow_duplicate=True),
+    Output("base_url", "pathname"),
     Input("login_state", "data"),
-    Input("register_state", "data"),
-    prevent_initial_call=True
+    Input("register_state", "data")
 )
 def atualizar_pathname(login_state, register_state):
     ctx = dash.callback_context
@@ -53,7 +52,7 @@ def atualizar_pathname(login_state, register_state):
 
         if trigg_id == 'register_state':
             if register_state == '':
-                return '/login'
+                return '/home'
             else:
                 return '/register'
 
@@ -68,18 +67,42 @@ def atualizar_pathname(login_state, register_state):
 def renderizar_paginas(pathname, login_state, register_state):
     if pathname == "/login" or pathname == "/":
         return login.render_layout(login_state)
-    if pathname == "/register":
-        return register.render_layout(register_state)
-    if pathname == '/home':
-        return home.render_layout(current_user)
-    if pathname == '/consultar_paradas':
-        return consultar_paradas.render_layout(current_user)
-    if pathname == '/consultar_turno':
-        return consultar_turno.render_layout(current_user)
-    if pathname == '/aprop_paradas':
-        return aprop_paradas.render_layout(current_user)
-    if pathname == '/aprop_turno':
-        return aprop_turno.render_layout(current_user)
 
+    if pathname == "/register":
+        if current_user.usr_role == "admin":
+            return register.render_layout(register_state)
+        else:
+            return home.render_layout(current_user)
+
+    if pathname == '/home':
+        if current_user.is_authenticated:
+            return home.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
+    if pathname == '/consultar_paradas':
+        if current_user.is_authenticated:
+            return consultar_paradas.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
+    if pathname == '/consultar_turno':
+        if current_user.is_authenticated:
+            return consultar_turno.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
+    if pathname == '/aprop_paradas':
+        if current_user.is_authenticated:
+            return aprop_paradas.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
+    if pathname == '/aprop_turno':
+        if current_user.is_authenticated:
+            return aprop_turno.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+            
 if __name__ == "__main__":
     app.run_server(port=5000, debug=True)

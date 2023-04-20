@@ -32,7 +32,7 @@ def render_layout(user):
     template = html.Div([
             dbc.Row([
                 html.Div([
-                    dcc.Location(id="base_url"),
+                    dcc.Location(id="consultar_turno_base_url"),
                     html.Div([
                     html.H3(username.replace("'", ""), style={"color": "white"}),
 
@@ -44,7 +44,8 @@ def render_layout(user):
                             dbc.NavLink("Consultar paradas", href="/consultar_paradas", active="exact"),
                             dbc.NavLink("Apropriar paradas", href="/aprop_paradas", active="exact"),
                             dbc.NavLink("Consultar turno", href="/consultar_turno", active="exact"),
-                            dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact")
+                            dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact"),
+                            dbc.NavLink("Registrar usuário", href="/register", active="exact")
                         ], pills=True, vertical=False, id='nav')
                     ], style={"height": "100%", 'display': 'flex', 'flex-direction': 'column'}),
 
@@ -53,7 +54,7 @@ def render_layout(user):
                     ])
                 ], style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'center'}),
                 
-            ], style={"height": '15%', 'width': '110vw', 'display': 'block', 'justify-content': 'space-evenly', 'background-color': '#298753'}),
+            ], style={"height": '15%', 'width': '105vw', 'display': 'block', 'justify-content': 'space-evenly', 'background-color': '#298753'}),
 
             dbc.Row([   
                 html.Div([

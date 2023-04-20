@@ -1,10 +1,12 @@
-from app import *
-from sqlalchemy import text
-import pandas as pd
-from sqlalchemy.orm import Session
-from werkzeug.security import generate_password_hash, check_password_hash
+from connection import conn
 
-pwd = '123'
-hashed_pwd = generate_password_hash(pwd, method="SHA256")
-h = f"'{hashed_pwd}'"
-print(check_password_hash(h.replace("'", ""), pwd))
+from pandas import read_sql, DataFrame
+
+ins = 'select Producao from tbl_Paradas'
+df = DataFrame(read_sql(ins, conn))
+arr = []
+
+for i in df.drop_duplicates().values.tolist():
+    arr.append(i[0])
+
+print(arr)
