@@ -96,7 +96,7 @@ def render_layout(user):
                             ]),
 
                                 dbc.Row([
-                                    dbc.Button("Consultar", id="botao_consulta_paradas", style={"margin": "10px", 'width': '100px'})
+                                    dbc.Button("Consultar", id="botao_consultar_turnos", style={"margin": "10px", 'width': '100px'})
                                 ])
                             ], style=card_style),
                             
