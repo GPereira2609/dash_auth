@@ -119,4 +119,4 @@ def renderizar_paginas(pathname, login_state, register_state):
             return login.render_layout(register_state)
             
 if __name__ == "__main__":
-    app.run_server(port=5000, debug=True)
+    app.run_server(port=8050, debug=False)
