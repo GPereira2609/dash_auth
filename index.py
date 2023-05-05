@@ -7,8 +7,8 @@ import dash
 
 from app import *
 
-from pages import login, register, home, sidebar, consultar_paradas, consultar_turno, aprop_paradas, aprop_turno
-from flask_login import current_user
+from pages import login, register, home, consultar_paradas, consultar_turno, aprop_paradas, aprop_turno, atualizar_parada
+from flask_login import current_user, logout_user
 from sqlalchemy.orm import Session
 
 login_manager = LoginManager()
@@ -101,6 +101,20 @@ def renderizar_paginas(pathname, login_state, register_state):
     if pathname == '/aprop_turno':
         if current_user.is_authenticated:
             return aprop_turno.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
+    if pathname == "/logout":
+        if current_user.is_authenticated:
+            logout_user()
+            return login.render_layout(register_state)
+        else:
+            return login.render_layout(register_state)
+
+    if '/atualizar_parada/' in pathname:
+        if current_user.is_authenticated:
+            id = pathname[18:]
+            return atualizar_parada.render_layout(current_user, id)
         else:
             return login.render_layout(register_state)
             

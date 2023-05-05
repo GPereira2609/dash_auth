@@ -12,7 +12,7 @@ conn_url = URL.create(
     'mssql+pyodbc',
     username='sa',
     password='adm@123',
-    host='192.168.1.10',
+    host='192.168.1.8',
     port='1433',
     database='db_SistemaApropriaçãoMVV',
     query = dict(driver="SQL Server")

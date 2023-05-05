@@ -1,4 +1,4 @@
-from connection import conn
+from connection import conn, engine
 
 from pandas import read_sql, DataFrame
 
@@ -11,12 +11,5 @@ from pandas import read_sql, DataFrame
 
 # print(arr)
 
-sist = 'Britagem Primária'
-proc = 'Via Seca'
-equip = '2101-FE-001'
-dt_inicio = '2021/06/04'
-dt_fim = '2021/06/05'
-ins = f"select * from tbl_Paradas where Sistema = '{sist}' and Producao = '{proc}' and Equipamento = '{equip}' and DataInicio >= convert(Datetime, '{dt_inicio}') and DataFim <= convert(Datetime, '{dt_fim}')"
-df = DataFrame(read_sql(ins, conn))
-
-print(df["Id"].values[0])
+df = DataFrame(read_sql("select CodigoFalha from tbl_Paradas where id = 402", engine.connect()))
+print(df["CodigoFalha"][0])
