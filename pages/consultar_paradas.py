@@ -7,18 +7,19 @@ from sqlalchemy import text
 from functools import wraps
 
 from globals import *
+from pages import navbar
 
 def admin_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'admin':
+        if current_user.usr_role != 'aprop_admin':
             return ''
         return func(*args, **kwargs)
     return decorated_view
 
 
 card_style = {
-    'width': '30vw',
+    'width': '90%',
     'min-height': '450px',
     'padding-top': '25px',
     'padding-right': '25px',
@@ -29,7 +30,7 @@ card_style = {
 }
 
 card_style2= {
-    'width': '90vw',
+    'width': '90%',
     'min-height': '300px',
     'padding-top': '25px',
     'padding-right': '25px',
@@ -46,51 +47,11 @@ def render_layout(user):
     df = DataFrame(read_sql("select * from tbl_Paradas", engine.connect()))
     
     layout = html.Div([
-            dbc.Row([
-            dbc.Col([
-                html.Div([
-                    html.Div([
-                        dbc.Col([
-                            html.Img(src=app.get_asset_url('do-utilizador.png'), height=70, width=70), 
-                        ], style={"display": "flex", "flex-direction": "column", "justify-content": "center"}),
-                        dcc.Location(id="consultar_paradas_base_url"),
-                        dbc.Col(),
-                        dbc.Col(),
-                        dbc.Col()
-                ], style={'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'height': "100%", "margin-left": "10 auto", "align-items": "left"}),
-
-  
-
-                    html.Div([
-                        dbc.Nav([
-                            dbc.NavLink("Home", href="/home", active="exact"),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Consultar paradas", href="/consultar_paradas", active="exact"),
-                                dbc.NavLink("Apropriar paradas", href="/aprop_paradas", active="exact"),
-                            ], label="Paradas", nav=True),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Consultar turno", href="/consultar_turno", active="exact"),
-                                dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact"),
-                            ], label="Turno", nav=True),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Registrar usuário", href="/register", active="exact"),
-                                dbc.NavLink("Sair", href="/logout")
-                            ], label="Usuário", nav=True),
-                        ], pills=True, vertical=False, id='nav')
-                    ], style={"height": "100%", 'display': 'flex', 'flex-direction': 'column'}),
-
-                    html.Div([
-                        html.Img(src=app.get_asset_url('f2711217-e0a9-4a63-a24c-3c969b7ce090.png'), height=70, width=194),
-                    ], style={"margin-right": "0", "padding": "0"})
-                ], style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly'}),
-            ], style={"display": "flex", "flex-direction": "column", "justify-content": "space-between"})
-                
-            ], style={"height": '15%', 'width': '105vw', 'display': 'flex', "flex-direction": "row", 'justify-content': 'space-between', 'background-color': '#298753'}),
-
-            dbc.Row([   
+        dcc.Location(id="consultar_paradas_base_url"),
+        dcc.Download(id="download_consultar_paradas"),
+        
+        navbar.nav()[0],
+           dbc.Row([   
                 html.Div([
                     
                     dbc.Row([
@@ -172,7 +133,8 @@ def render_layout(user):
                                 ]),
 
                                 dbc.Row([
-                                    dbc.Button("Consultar", id="botao_consulta_paradas", style={"margin": "10px", 'width': '100px'})
+                                    dbc.Button("Consultar", id="botao_consulta_paradas", style={"margin": "10px", 'width': '100px'}),
+                                    dbc.Button("Exportar", id="botao_exportar_paradas", style={"margin": "10px", 'width': '100px'}),
                                 ])
                             ], style=card_style),
                             
@@ -306,6 +268,16 @@ def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codig
                 ins += ' and '
             flag = 1
             ins += f" Equipamento = '{equip}'"
+        if dt_inicio is not None and dt_fim is None:
+            if flag==1:
+                ins += " and "
+            flag = 1
+            ins += f" DataInicio >= '{dt_inicio}'"
+        if dt_fim is not None and dt_inicio is None:
+            if flag==1:
+                ins += ' and '
+            flag = 1
+            ins += f" DataFim <= '{dt_fim} 23:59:59'"
         if dt_inicio and dt_fim:
             if flag == 1:
                 ins += ' and '
@@ -337,16 +309,18 @@ def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codig
                 ins += ' and '
             flag = 1
             ins += f" Componente = '{componente}'"
-        flag = 0
-        
         df = DataFrame(read_sql(ins, conn))
         cols = []
         for col in df.columns:
             cols.append({"name": str(col), "id": str(col)})
 
         values = df.to_dict(orient="records")
+        print(ins)
 
-        return [values, cols]
+        if flag == 1:
+            return [values, cols]
+        flag = 0
+        
 
 # @app.callback(
 #     Output("tabela_dados", "data"),
@@ -565,3 +539,14 @@ def popular_causa_aparente_filtrado(value):
                 arr.append(i[0])
 
         return arr
+    
+@app.callback(
+    Output("download_consultar_paradas", "data"),
+    Input("botao_exportar_paradas", "n_clicks"),
+    State("tabela_dados", "data")
+)
+def exportar_planilha(n, dados):
+    if n is not None:
+        df_export = pd.DataFrame(dados)
+
+        return dcc.send_data_frame(df_export.to_excel, "dados.xlsx", sheet_name="CONSULTA_PARADAS")

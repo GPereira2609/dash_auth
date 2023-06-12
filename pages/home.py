@@ -7,8 +7,9 @@ from functools import wraps
 from app import *
 from flask import redirect
 
-from pages import sidebar
+from pages import navbar
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 import numpy as np
 import plotly.express as px
 
@@ -36,50 +37,8 @@ def render_layout(user):
     username = username.replace("'", "")
 
     template = html.Div([
-        dbc.Row([
-            dbc.Col([
-                html.Div([
-                    html.Div([
-                        dbc.Col([
-                            html.Img(src=app.get_asset_url('do-utilizador.png'), height=70, width=70), 
-                        ], style={"display": "flex", "flex-direction": "column", "justify-content": "center"}),
-                        dcc.Location(id="home_base_url"),
-                        dbc.Col(),
-                        dbc.Col(),
-                        dbc.Col()
-                ], style={'display': 'flex', 'flex-direction': 'column', 'justify-content': 'center', 'height': "100%", "margin-left": "10 auto", "align-items": "left"}),
-
-  
-
-                    html.Div([
-                        dbc.Nav([
-                            dbc.NavLink("Home", href="/home", active="exact"),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Consultar paradas", href="/consultar_paradas", active="exact"),
-                                dbc.NavLink("Apropriar paradas", href="/aprop_paradas", active="exact"),
-                            ], label="Paradas", nav=True),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Consultar turno", href="/consultar_turno", active="exact"),
-                                dbc.NavLink("Apropriação turno", href="/aprop_turno", active="exact"),
-                            ], label="Turno", nav=True),
-
-                            dbc.DropdownMenu([
-                                dbc.NavLink("Registrar usuário", href="/register", active="exact"),
-                                dbc.NavLink("Sair", href="/logout")
-                            ], label="Usuário", nav=True),
-                        ], pills=True, vertical=False, id='nav')
-                    ], style={"height": "100%", 'display': 'flex', 'flex-direction': 'column'}),
-
-                    html.Div([
-                        html.Img(src=app.get_asset_url('f2711217-e0a9-4a63-a24c-3c969b7ce090.png'), height=70, width=194),
-                    ], style={"margin-right": "0", "padding": "0"})
-                ], style={'display': 'flex', 'flex-direction': 'row', 'justify-content': 'space-evenly'}),
-            ], style={"display": "flex", "flex-direction": "column", "justify-content": "space-between"})
-                
-            ], style={"height": '15%', 'width': '105vw', 'display': 'flex', "flex-direction": "row", 'justify-content': 'space-between', 'background-color': '#298753'}),
-
+	  dcc.Location(id="home_base_url"),
+        navbar.nav()[0],
         dbc.Row([   
             html.Div([
                 html.H1("Bem Vindo ao Sistema de Controle e Apropriação de Paradas", style={"font-family": "sans-serif"}, id="h1"),

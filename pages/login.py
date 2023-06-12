@@ -38,7 +38,7 @@ def render_layout(login_state):
 
     login = dbc.Card([
         html.Div([
-            html.H3("Login"),
+            html.Img(src=app.get_asset_url("mvv-logo.png"), height=70, width=180),
         ], style={"padding": "5px", "justify-content": "center", "display": "flex"}),
         html.Div([
             dbc.Input(id="user_login", placeholder="Usuário", type="text", style={"margin-bottom": '10px'}),

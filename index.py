@@ -7,7 +7,7 @@ import dash
 
 from app import *
 
-from pages import login, register, home, consultar_paradas, consultar_turno, aprop_paradas, aprop_turno, atualizar_parada
+from pages import login, register, home, aprop_paradas, aprop_turno, atualizar_parada, consultar_paradas, consultar_turno, lab_mpaes, lab_raiox, consultar_paradas_teste
 from flask_login import current_user, logout_user
 from sqlalchemy.orm import Session
 
@@ -15,17 +15,35 @@ login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = '/login'
 
+sidebar = dbc.Nav(
+            [
+                dbc.NavLink(
+                    [
+                        html.Div(page["name"], className="ms-2"),
+                    ],
+                    href=page["path"],
+                    active="exact",
+                )
+                for page in dash.page_registry.values()
+            ],
+            vertical=False,
+            pills=True,
+            className="text-center border",
+            justified=True,
+            fill=True,
+            style={"position": "fixed"}
+)
+
 app.layout = html.Div([
     dbc.Row([
         dbc.Col([
             dcc.Location(id="base_url", refresh=False),
             dcc.Store(id="login_state", data=""),
             dcc.Store(id="register_state", data=""),
-
             html.Div(id="page_content", style={"height": "100vh", 'display': 'flex', 'justify-content': 'center', 'background-color': '#298753', 'width': '100vw'}), 
         ])
-    ], style={'width': '100vw', 'height': '100vh'})
-], style={'width': '100vw', 'height': '100vh'})
+    ], style={'width': '100vw', 'height': '100%'})
+], style={'width': '100%', 'height': '100%'})
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -69,7 +87,7 @@ def renderizar_paginas(pathname, login_state, register_state):
         return login.render_layout(login_state)
 
     if pathname == "/register":
-        if current_user.usr_role == "admin":
+        if current_user.usr_role == "aprop_admin" or "lab_admin":
             return register.render_layout(register_state)
         else:
             return home.render_layout(current_user)
@@ -117,6 +135,24 @@ def renderizar_paginas(pathname, login_state, register_state):
             return atualizar_parada.render_layout(current_user, id)
         else:
             return login.render_layout(register_state)
-            
+        
+    if pathname == '/lab/mpaes':
+        if current_user.is_authenticated:
+            return lab_mpaes.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+        
+    if pathname == "/lab/raiox":
+        if current_user.is_authenticated:
+            return lab_raiox.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+        
+    if pathname == "/page_teste":
+        if current_user.is_authenticated:
+            return consultar_paradas_teste.render_layout(current_user)
+        else:
+            return login.render_layout(register_state)
+
 if __name__ == "__main__":
-    app.run_server(port=8050, debug=False)
+    app.run_server(port=8050, debug=True)

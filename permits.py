@@ -4,7 +4,7 @@ conn = sqlite3.connect("dados.sqlite")
 
 cursor = conn.cursor()
 # ins = """
-#     update usuarios set usr_role = 'operador' where id_usr = 2;
+#     update usuarios set usr_role = 'aprop_admin' where id_usr = 3;
 # """
 
 ins = """

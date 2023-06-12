@@ -15,7 +15,7 @@ from flask_login import current_user
 def admin_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'admin':
+        if current_user.usr_role != 'aprop_admin':
             return ''
         return func(*args, **kwargs)
     return decorated_view
@@ -53,7 +53,7 @@ def render_layout(register_state):
             dbc.Input(id="user_register", placeholder="Usuário", type="text", style={"margin-bottom": "10px"}),
             dbc.Input(id="password_register", placeholder="Senha", type="password", style={"margin-bottom": "10px"}),
             dbc.Input(id="email_register", placeholder="Email", type="email", style={"margin-bottom": "10px"}),
-            dcc.Dropdown(id="dropdown_registro", options=["admin", "operador", "usuario"], style={"margin-bottom": "10px"}),
+            dcc.Dropdown(id="dropdown_registro", options=["aprop_admin", "aprop_operador", "lab_pcp", "lab_sgs"], style={"margin-bottom": "10px"}),
             dbc.Button("Registrar", id="register_button", style={"margin-bottom": "10px"}),
             dbc.Button("Voltar", id="botao_voltar")
         ], style={"display": "flex", "flex-direction": "column", "justify-content": "space-evenly", "padding": '10px', 'margin': "10px"}),

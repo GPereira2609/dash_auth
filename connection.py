@@ -7,13 +7,14 @@ from sqlalchemy import text, Column, Integer, Float, String, ForeignKey, Date, T
 from urllib.parse import quote_plus
 from sqlalchemy.engine import url
 from sqlalchemy.engine.url import *
+from conn_ip import *
 
 conn_url = URL.create(
     'mssql+pyodbc',
-    username='sa',
-    password='adm@123',
-    host='192.168.1.8',
-    port='1433',
+    username=USERNAME,
+    password=PASSWORD,
+    host=HOST,
+    port=PORT,
     database='db_SistemaApropriaçãoMVV',
     query = dict(driver="SQL Server")
 )
@@ -24,3 +25,4 @@ session = Session()
 Base = declarative_base()
 
 conn = engine.connect()
+
