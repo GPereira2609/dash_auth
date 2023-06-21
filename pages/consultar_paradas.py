@@ -239,87 +239,126 @@ def controlar_row_selectable(n):
     ]
 )
 def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codigo, grupo_codigo, codigo_falha, causa_aparente, componente, colunas):
-    flag = 0
-
-    temp = ""
-    if len(colunas) == 0:
-        temp = "* "
-    else:
-        for coluna in colunas:
-            temp += f"{coluna},"
-
-    if (sist or proc or equip or dt_inicio or dt_fim or turno or tipo_codigo or grupo_codigo or codigo_falha or causa_aparente or componente) is None:
-        raise PreventUpdate 
-    if n != "single":
+    if(n is None):
         raise PreventUpdate
-    if n == 'single':
+    else:
+        if((dt_inicio is None) and (dt_fim is None)):
+            ins = "SELECT * FROM tbl_Paradas"
+        elif((dt_inicio is not None) and (dt_fim is None)):
+            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}'"
+        elif((dt_inicio is None) and (dt_fim is not None)):
+            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataFim AS DATE) <= '{dt_fim}'"
+        else:
+            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}' AND CAST(DataFim AS DATE) <= '{dt_fim}'"
 
-        ins = f"select {temp[:-1]} from tbl_Paradas where"
-        if proc:
-            flag = 1
-            ins += f" Producao = '{proc}'"
+        df = pd.DataFrame(pd.read_sql(ins, conn))
+
         if sist:
-            if flag == 1:
-                ins += " and "
-            flag = 1
-            ins += f" Sistema = '{sist}'"
+            df = df[(df['Sistema'] == f'{sist}')]
+        if proc:
+            df = df[(df['Producao'] == f'{proc}')]
         if equip:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" Equipamento = '{equip}'"
-        if dt_inicio is not None and dt_fim is None:
-            if flag==1:
-                ins += " and "
-            flag = 1
-            ins += f" DataInicio >= '{dt_inicio}'"
-        if dt_fim is not None and dt_inicio is None:
-            if flag==1:
-                ins += ' and '
-            flag = 1
-            ins += f" DataFim <= '{dt_fim} 23:59:59'"
-        if dt_inicio and dt_fim:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" DataInicio >= '{dt_inicio}' and DataFim <= '{dt_fim} 23:59:59'"
+            df = df[(df["Equipamento"] == f'{equip}')]
         if turno:
-            if flag == 1:
-                ins += ' and ' 
-            flag = 1
-            ins += f" Turno = '{turno}'"
+            df = df[(df["Turno"] == f'{turno}')]
         if tipo_codigo:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" TipoCodigo = '{tipo_codigo}'"
+            df = df[(df["TipoCodigo"] == f'{tipo_codigo}')]
         if grupo_codigo:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" GrupoCodigo = '{grupo_codigo}'"
+            df = df[(df["GrupoCodigo"] == f'{grupo_codigo}')]
         if codigo_falha:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" CodigoFalha = '{codigo_falha}'"
-    
+            df = df[(df['CodigoFalha'] == f"{codigo_falha}")]
+        if causa_aparente:
+            df = df[(df['CausaAparente'] == f"{causa_aparente}")]
         if componente:
-            if flag == 1:
-                ins += ' and '
-            flag = 1
-            ins += f" Componente = '{componente}'"
-        df = DataFrame(read_sql(ins, conn))
-        cols = []
-        for col in df.columns:
-            cols.append({"name": str(col), "id": str(col)})
+            df = df[(df["Componente"] == f"{componente}")]
+        if colunas or len(colunas)!=0:
+            df = df.loc[:, [ str(col) for col in colunas ]]
 
-        values = df.to_dict(orient="records")
-        print(ins)
+        values = df.to_dict(orient='records')
+        cols = [ {"name": str(col), "id": str(col)} for col in df.columns ]
 
-        if flag == 1:
-            return [values, cols]
-        flag = 0
+        return [ values, cols ]
+    # flag = 0
+
+    # temp = ""
+    # if len(colunas) == 0:
+    #     temp = "* "
+    # else:
+    #     for coluna in colunas:
+    #         temp += f"{coluna},"
+
+    # if (sist or proc or equip or dt_inicio or dt_fim or turno or tipo_codigo or grupo_codigo or codigo_falha or causa_aparente or componente) is None:
+    #     raise PreventUpdate 
+    # if n != "single":
+    #     raise PreventUpdate
+    # if n == 'single':
+
+    #     ins = f"select {temp[:-1]} from tbl_Paradas where"
+    #     if proc:
+    #         flag = 1
+    #         ins += f" Producao = '{proc}'"
+    #     if sist:
+    #         if flag == 1:
+    #             ins += " and "
+    #         flag = 1
+    #         ins += f" Sistema = '{sist}'"
+    #     if equip:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" Equipamento = '{equip}'"
+    #     if dt_inicio is not None and dt_fim is None:
+    #         if flag==1:
+    #             ins += " and "
+    #         flag = 1
+    #         ins += f" DataInicio >= '{dt_inicio}'"
+    #     if dt_fim is not None and dt_inicio is None:
+    #         if flag==1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" DataFim <= '{dt_fim} 23:59:59'"
+    #     if dt_inicio and dt_fim:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" DataInicio >= '{dt_inicio}' and DataFim <= '{dt_fim} 23:59:59'"
+    #     if turno:
+    #         if flag == 1:
+    #             ins += ' and ' 
+    #         flag = 1
+    #         ins += f" Turno = '{turno}'"
+    #     if tipo_codigo:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" TipoCodigo = '{tipo_codigo}'"
+    #     if grupo_codigo:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" GrupoCodigo = '{grupo_codigo}'"
+    #     if codigo_falha:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" CodigoFalha = '{codigo_falha}'"
+    
+    #     if componente:
+    #         if flag == 1:
+    #             ins += ' and '
+    #         flag = 1
+    #         ins += f" Componente = '{componente}'"
+    #     df = DataFrame(read_sql(ins, conn))
+    #     cols = []
+    #     for col in df.columns:
+    #         cols.append({"name": str(col), "id": str(col)})
+
+    #     values = df.to_dict(orient="records")
+    #     print(ins)
+
+    #     if flag == 1:
+    #         return [values, cols]
+    #     flag = 0
         
 
 # @app.callback(

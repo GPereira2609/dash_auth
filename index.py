@@ -87,7 +87,7 @@ def renderizar_paginas(pathname, login_state, register_state):
         return login.render_layout(login_state)
 
     if pathname == "/register":
-        if current_user.usr_role == "aprop_admin" or "lab_admin":
+        if current_user.usr_role == "aprop_admin" or current_user.usr_role == "lab_pcp":
             return register.render_layout(register_state)
         else:
             return home.render_layout(current_user)

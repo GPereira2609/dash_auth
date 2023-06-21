@@ -15,8 +15,9 @@ from flask_login import current_user
 def admin_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'aprop_admin':
-            return ''
+        if(current_user.is_authenticated):
+            if (current_user.usr_role != 'aprop_admin') and (current_user.usr_role != "lab_pcp"):
+                return ''
         return func(*args, **kwargs)
     return decorated_view
 

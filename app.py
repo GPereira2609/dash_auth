@@ -27,6 +27,7 @@ dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.4
 
 app = Dash(__name__, external_stylesheets= estilos + [dbc_css], title="Portal da Planta")
 app.config.suppress_callback_exceptions = True
+app.config["suppress_callback_exceptions"] = True
 server = app.server
 server.config.update(
     SECRET_KEY = os.urandom(12),
