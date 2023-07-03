@@ -7,6 +7,7 @@ from dash.exceptions import PreventUpdate
 from sqlalchemy import text
 from flask_login import current_user
 from functools import wraps
+from numpy import nan
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -369,13 +370,44 @@ def parse_contents(contents, filename):
     try:
         if 'csv' in filename:
             df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')), index_col=0
+                io.StringIO(decoded.decode('utf-8')), index_col=False
                 )
         elif 'xlsx' in filename or 'xls' in filename:
             df = pd.read_excel(
                 io.BytesIO(decoded), index_col=0
             )
+        
+        colunas_banc = [ col for col in pd.read_sql('SELECT * FROM LABORATORIO2', conn).columns ]
+        colunas = df.iloc[11][1:]
+        colunas_s_nan = [ ]
+        for col in list(colunas.values):
+            if str(col) != "nan":
+                colunas_s_nan.append(col)
 
+        colunas_upper = list(map(lambda x: x.upper(), colunas_s_nan))
+        colunas_faltantes = list(filter(lambda x: x not in colunas_banc, colunas_upper))
+        print(type(colunas_faltantes))
+
+        if colunas_faltantes != None:
+            print(colunas_faltantes)
+            return html.Div([
+                f"""Uma ou mais colunas existentes no arquivo não existem no banco de dados. 
+                Por favor, adicione-as manualmente.
+                [{colunas_faltantes}]"""
+            ])
+
+        df_altura = df.shape[0]
+        codigo_amostra = df.columns[1]
+        data = df.iloc[3][1]
+        tipo_analises =  [ ]
+        for i in range(14, df_altura):
+            tipo_analises.append(df.iloc[i][0])
+
+        # print(codigo_amostra)
+        # print(data)
+        # print(list(colunas.values))
+        # print(colunas_s_nan)
+        # print(tipo_analises)
     except Exception as e:
         print(e)
         return html.Div([
