@@ -13,6 +13,7 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import io
 import base64
+import re
 
 def admin_required(func):
     @wraps(func)
@@ -40,12 +41,20 @@ card_style2 = {
     'flex-direction': 'column'
 }
 
-df = pd.DataFrame(pd.read_sql("SELECT * FROM LABORATORIO", conn))
+df = pd.DataFrame(pd.read_sql("SELECT * FROM LABORATORIO2", conn))
 df_data = df.loc[:, ["DATA"]]
-menor_data = datetime.strptime(str(df_data["DATA"].min()), "%Y-%m-%d %H:%M:%S")
-menor_dia, menor_mes, menor_ano = menor_data.day, menor_data.month, menor_data.year
-maior_data = datetime.strptime(str(df_data["DATA"].max()), "%Y-%m-%d %H:%M:%S")
-maior_dia, maior_mes, maior_ano = maior_data.day, maior_data.month, maior_data.year
+# menor_data = datetime.strptime(str(df_data["DATA"].min()), "%Y/%m/%d %H:%M:%S.%f")
+# print(menor_data)
+# menor_dia, menor_mes, menor_ano = menor_data.day, menor_data.month, menor_data.year
+# maior_data = datetime.strptime(str(df_data["DATA"].max()), "%Y/%m/%d %H:%M:%S.%f")
+# maior_dia, maior_mes, maior_ano = maior_data.day, maior_data.month, maior_data.year
+menor_data = df_data["DATA"].min()
+menor_ano, menor_mes, menor_dia = int(str(menor_data)[0:4]), int(str(menor_data)[5:7]), int(str(menor_data)[8:10])
+menor_data = menor_data.strftime("%Y-%m-%d")
+
+maior_data = df_data["DATA"].max()
+maior_ano, maior_mes, maior_dia = int(str(maior_data)[0:4]), int(str(maior_data)[5:7]), int(str(maior_data)[8:10])
+maior_data = maior_data.strftime("%Y-%m-%d")
 
 def dataframe_to_sql_insert(df, table_name):
     columns = ', '.join(df.columns)
@@ -67,7 +76,7 @@ content = html.Div([
     dbc.Row([
         dbc.Card([
             html.Legend("Filtro por data"),
-            dcc.DatePickerSingle(id="datepicker_lab", display_format="DD/MM/YYYY", min_date_allowed=menor_data, max_date_allowed=maior_data, date=maior_data, style={"margin-bottom": "5px"}),
+            dcc.DatePickerSingle(id="datepicker_lab", display_format="DD/MM/YYYY", month_format="DD/MM/YYYY", min_date_allowed=menor_data, max_date_allowed=maior_data, date=maior_data, style={"margin-bottom": "5px"}),
             dcc.Dropdown(id="dropdown_colunas_lab", options=[i for i in df.columns], multi=True, placeholder="Colunas", value=["DATA", "CODIGO"]),
             
         ], style={"width": "45%","height": "100%",'padding': '25px','align-self': 'center','display': 'flex','flex-direction': 'column', "justify-content": "center", 'margin-right': '5%'}),
@@ -173,10 +182,13 @@ def render_layout(user):
                 'textAlign': 'center',
                 'margin': '10px'}),
 
+            
+
             dash_table.DataTable(id="tabela_importar_mpaes", data=[{}])
             ], id="modal_import_body_mpaes"),
 
             dbc.ModalFooter([
+                dcc.Dropdown(id="hora_import", options=["02", "05", "08", "11", "14", "17", "20", "23"], placeholder="Hora da amostra"),
                 dbc.Button("Importar", id="botao_confirmar_import_dados_mpaes", class_name="ms-auto")
             ])
 
@@ -204,11 +216,14 @@ def render_layout(user):
     Input("dropdown_colunas_lab", "value")
 )
 def preencher_tabela(data, colunas):
-    df_filtrado = pd.DataFrame(pd.read_sql(f"SELECT * FROM LABORATORIO WHERE CAST(DATA AS DATE) = '{data}'", conn))
+    ano = data[0:4]
+    mes = data[5:7]
+    dia = data[8:10]
+    df_filtrado = pd.DataFrame(pd.read_sql(f"SELECT * FROM LABORATORIO2 WHERE CAST(DATA AS DATE) = '{data}'", conn))
 
     if len(colunas) != 0:
         df_filtrado = df_filtrado.loc[:, [ str(col) for col in colunas ]]
-
+    # print(df_filtrado)
     values = df_filtrado.to_dict(orient="records")
     cols = [ {"name": str(col), "id": str(col)} for col in df_filtrado.columns ]
 
@@ -233,7 +248,7 @@ def ativar_editable(value):
 
 @app.callback(
     Output("download", "data"),
-    Input("export_planilha", "n_clicks"),
+    Input("export_planilha_mpaes", "n_clicks"),
     # State("datepicker_lab", "date"),
     State("tabela_lab", "data"),
     # State("dropdown_colunas_lab", "value"),
@@ -266,15 +281,17 @@ def controlar_modal_add_coluna(btn_abrir, btn_fechar, btn_atualizar, is_open, no
                     tipo = "VARCHAR(MAX)"
                 case "Número":
                     tipo = "REAL"
-            
-            ins = f"ALTER TABLE PCP_PLANTA.dbo.LABORATORIO ADD [{nome_coluna}] {tipo};"
+            ins = f"ALTER TABLE PCP_PLANTA.dbo.LABORATORIO2 ADD [{nome_coluna}] {tipo};"
+            print(ins)
 
             if(current_user.usr_role == "lab_pcp"):
                 with engine.connect() as conn:
                     try:
                         conn.execute(text(ins))
+                        print('certo')
                     except Exception as e:
                         print(f"Algo deu errado: {e}")
+                        print("Erro")
                     finally:
                         conn.close()
         return [not is_open, ""]
@@ -296,12 +313,13 @@ def controlar_modal_remover_coluna(abrir, fechar, confirmar, is_open, coluna):
     if confirmar:
         if coluna is not None:
             for col in coluna:
-                ins = f"ALTER TABLE LABORATORIO DROP COLUMN [{col}];"
+                ins = f"ALTER TABLE LABORATORIO2 DROP COLUMN [{col}];"
 
                 if(current_user.usr_role == "lab_pcp"):
                     with engine.connect() as conn:
                         try:
                             conn.execute(text(ins))
+                            print(ins)
                         except Exception as e:
                             print(f"Algo deu errado: {e}")
                         finally:
@@ -338,10 +356,13 @@ def controlar_modal_import(n, is_open):
                 'textAlign': 'center',
                 'margin': '10px'}),
 
+            
+
             dash_table.DataTable(id="tabela_importar_mpaes", data=[{}])
             ], id="modal_import_body_mpaes"),
 
             dbc.ModalFooter([
+                dcc.Dropdown(id="hora_import", options=["02", "05", "08", "11", "14", "17", "20", "23"], placeholder="Hora da amostra", style={"width": "60%"}),
                 dbc.Button("Importar", id="botao_confirmar_import_dados_mpaes", class_name="ms-auto")
             ])
     )
@@ -358,12 +379,12 @@ def controlar_modal_import(n, is_open):
 )
 def atualizar_colunas_tempo_real(is_open_add, is_open_remove):
     if((is_open_add) or (not is_open_add) or (is_open_remove) or (not is_open_remove)):
-        df_colunas = pd.DataFrame(pd.read_sql("select * from LABORATORIO", conn))
+        df_colunas = pd.DataFrame(pd.read_sql("select * from LABORATORIO2", conn))
         arr = [ col for col in df_colunas.columns ]
 
         return [arr, arr] 
     
-def parse_contents(contents, filename):
+def parse_contents(contents, filename, hora):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -386,22 +407,56 @@ def parse_contents(contents, filename):
 
         colunas_upper = list(map(lambda x: x.upper(), colunas_s_nan))
         colunas_faltantes = list(filter(lambda x: x not in colunas_banc, colunas_upper))
-        print(type(colunas_faltantes))
+        
+        df_altura = df.shape[0]
+        codigo_amostra = df.columns[1]
+        data = df.iloc[3][1]
+        tipo_analises = [ df.iloc[i][0] for i in range(14, df_altura)]
+        # for i in range(14, df_altura):
+            # tipo_analises.append(df.iloc[i][0])
+
+        if colunas_faltantes == None or len(colunas_faltantes) == 0:
+            df = df.iloc[13:][1:]
+            # analises = list(df.iloc[0:][list(df.iloc[0:])[0]])
+            df.insert(0, "TIPO_ANALISE", tipo_analises)
+            if hora == None:
+                df.insert(1, "DATA", [ data for i in range(df_altura-14) ])
+            else:
+                df.insert(1, "DATA", [ f"{data} {hora}:00:00" for i in range(df_altura-14) ])
+            df.insert(2, "CODIGO_AMOSTRA", [ codigo_amostra for i in range(df_altura-14) ])
+            df.pop("COA:")
+            colunas_df = df.columns
+            for i in range(0, len(colunas_upper)):
+                df.rename(columns={f"{colunas_df[i+3]}": f"{colunas_upper[i]}"}, inplace=True)
+            df = df.dropna(axis=1)
+
+            # df.insert(0,"CODIGO_AMOSTRA", [codigo_amostra for i in range(df_altura-14)])
+            
+            return html.Div([
+                dash_table.DataTable(
+            df.to_dict(orient="records"),
+            [{'name': i, 'id': i} for i in df.columns], style_table={"height": "300px", "overflowY": "auto"}, editable=False, style_cell={"textAlign": "left"}, style_header={"fontWeight": "bold"}, style_as_list_view=False, 
+            id="tabela_importar_mpaes"
+        ),
+
+        html.Hr(),  # horizontal line
+
+       
+        # For debugging, display the raw contents provided by the web browser
+        # html.Div('Raw Content'),
+        # html.Pre(contents[0:200] + '...', style={
+        #     'whiteSpace': 'pre-wrap',
+        #     'wordBreak': 'break-all'
+        # })
+    ])
 
         if colunas_faltantes != None:
-            print(colunas_faltantes)
             return html.Div([
                 f"""Uma ou mais colunas existentes no arquivo não existem no banco de dados. 
                 Por favor, adicione-as manualmente.
                 [{colunas_faltantes}]"""
             ])
 
-        df_altura = df.shape[0]
-        codigo_amostra = df.columns[1]
-        data = df.iloc[3][1]
-        tipo_analises =  [ ]
-        for i in range(14, df_altura):
-            tipo_analises.append(df.iloc[i][0])
 
         # print(codigo_amostra)
         # print(data)
@@ -434,9 +489,10 @@ def parse_contents(contents, filename):
 @app.callback(
     Output("modal_import_body_mpaes", "children"),
     Input('upload_mpaes', 'contents'),
-    State('upload_mpaes', 'filename')
+    State('upload_mpaes', 'filename'),
+    State('hora_import', 'value')
 )
-def update_output(list_of_contents, list_of_names):
+def update_output(list_of_contents, list_of_names, hora):
     if list_of_contents is None:
         return (dcc.Upload(id="upload_mpaes", children=[
                     html.Div([
@@ -452,6 +508,7 @@ def update_output(list_of_contents, list_of_names):
             'textAlign': 'center',
             'margin': '10px'}),
             
+            # dcc.Dropdown(id="hora_import", options=["02", "05", "08", "11", "14", "17", "20", "23"], placeholder="Hora da amostra"),
             dash_table.DataTable(id="tabela_importar_mpaes", data=[{}])
             )
     
@@ -460,9 +517,43 @@ def update_output(list_of_contents, list_of_names):
         # for c,n,d in zip(list_of_contents, list_of_names, list_of_dates):
         #     print(c,n, d) 
         children = [
-            parse_contents(list_of_contents, list_of_names)]
+            parse_contents(list_of_contents, list_of_names, hora)]
         return children
-    
+
+
+# def dataframe_to_sql_insert_new_func(df):
+
+#     data = [ tuple(row) for row in df.values ]
+#     colunas = [ f"[{col}]" for col in df.columns ]
+
+#     inserts = [ ]
+#     for d in data:
+#         inserts.append(f"INSERT INTO LABORATORIO2 ({', '.join(colunas)}) VALUES {d}")
+#     sql_insert = f"INSERT INTO LABORATORIO2 ({', '.join(colunas)}) VALUES ({data[0]})"
+
+#     return inserts
+
+import pandas as pd
+
+def dataframe_to_sql_insert_new_func(df):
+    data = [tuple(row) for row in df.values]
+    colunas = [f"[{col}]" for col in df.columns]
+
+    inserts = []
+    pattern = r"\b\d{2}/\d{2}/\d{4}\b"
+    for d in data:
+        values = []
+        for value in d:
+            if value == d[1]:
+                ins = f"CONVERT(DATETIME, '{value}', 103)"
+            else:
+                ins = f"'{value}'"
+            values.append(ins)
+        inserts.append(f"INSERT INTO LABORATORIO2 ({', '.join(colunas)}) VALUES ({', '.join(values)})")
+
+    return inserts
+
+
 @app.callback(
     Output("gateway_import_mpaes", "children"),
     Input("botao_confirmar_import_dados_mpaes", "n_clicks"),
@@ -475,13 +566,18 @@ def botao_importar_modal(n, dados):
     
     if n:
         df = DataFrame(dados)
-
-        tableName = "LABORATORIO"
-        sql_insert = dataframe_to_sql_insert(df, tableName)
+        # sql_insert = dataframe_to_sql_insert(df, tableName)
+        sql_insert = dataframe_to_sql_insert_new_func(df)
+        pattern = r"\b\d{2}/\d{2}/\d{4}\b"
 
         for ins in sql_insert:
+            data = re.findall(pattern, ins)
+
+            # print(ins)
             with engine.connect() as conn:
                     try:
+                        # ins.replace(data[0], f"CONVERT(DATETIME, '{data}', 103)")
+                        # print(ins)
                         conn.execute(text(ins.replace("None", "NULL")))
                     except Exception as e:
                         print(f"Algo deu errado: {e}")
@@ -493,3 +589,24 @@ def botao_importar_modal(n, dados):
     
 # )
 # def excluir_registro()
+@app.callback(
+    Output("tabela_importar_mpaes", "data"),
+    Input("hora_import", "value"),
+    State("tabela_importar_mpaes", "data"),
+    # State('upload_mpaes', 'contents')
+)
+def insert_hora_pos_upload(value, data):
+    if value is None:
+        raise PreventUpdate
+    if value:
+        df = pd.DataFrame(data)
+        if df.empty:
+            raise PreventUpdate
+        else:
+            v = df["DATA"].iloc[0]
+            if len(v) == 10:
+                df["DATA"] = df["DATA"].map({f"{v}": f"{v} {value}:00:00"})
+            else:
+                pass
+
+            return df.to_dict(orient="records")
