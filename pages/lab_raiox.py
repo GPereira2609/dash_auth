@@ -7,6 +7,7 @@ from sqlalchemy import text
 from dash.exceptions import PreventUpdate
 from flask_login import current_user
 from functools import wraps
+from datetime import date
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -39,10 +40,18 @@ card_style2 = {
     'flex-direction': 'column'
 }
 
-df = pd.DataFrame(pd.read_sql("select * from LABORATORIO_RAIOX", conn))
+df = pd.DataFrame(pd.read_sql("select * from LABORATORIO_RAIOX2", conn))
 df_data = df.loc[:, ["DATA"]]
-menor_data = datetime.strptime(str(df_data["DATA"].min()), "%Y-%m-%d %H:%M:%S")
-maior_data = datetime.strptime(str(df_data["DATA"].max()), "%Y-%m-%d %H:%M:%S")
+menor_data = df_data["DATA"].min()
+maior_data = df_data["DATA"].max()
+if menor_data == None:
+    menor_data = maior_data = date.today()
+    menor_ano, menor_mes, menor_dia = int(str(menor_data)[0:4]), int(str(menor_data)[5:7]), int(str(menor_data)[8:10])
+    maior_ano, maior_mes, maior_dia = int(str(maior_data)[0:4]), int(str(maior_data)[5:7]), int(str(maior_data)[8:10])
+
+# menor_data = menor_data.strftime("%Y-%m-%d")
+# maior_data = maior_data.strftime("%Y-%m-%d")
+
 
 def dataframe_to_sql_insert(df, table_name):
     columns = ', '.join(df.columns)
@@ -220,7 +229,7 @@ def render_layout(user):
     Input("dropdown_colunas_lab_raiox", "value")
 )
 def preencher_tabela_raiox(data, colunas):
-    df_filtrado = pd.DataFrame(pd.read_sql(f"SELECT * FROM LABORATORIO_RAIOX WHERE CAST(DATA AS DATE) = '{data}'", conn))
+    df_filtrado = pd.DataFrame(pd.read_sql(f"SELECT * FROM LABORATORIO_RAIOX2 WHERE CAST(DATA AS DATE) = '{data}'", conn))
 
     if len(colunas) != 0:
         df_filtrado = df_filtrado.loc[:, [ str(col) for col in colunas ]]
@@ -282,7 +291,7 @@ def controlar_modal(btn_abrir, btn_fechar, btn_atualizar, is_open, nome_coluna, 
                 case "Número":
                     tipo = "REAL"
             
-            ins = f"ALTER TABLE PCP_PLANTA.dbo.LABORATORIO_RAIOX ADD [{nome_coluna}] {tipo};"
+            ins = f"ALTER TABLE PCP_PLANTA.dbo.LABORATORIO_RAIOX2 ADD [{nome_coluna}] {tipo};"
 
             if current_user.usr_role == "lab_pcp":
                 with engine.connect() as conn:
@@ -313,7 +322,7 @@ def controlar_modal_remover_coluna(abrir, fechar, confirmar, is_open, coluna):
     if confirmar:
         if coluna is not None:
             for col in coluna:
-                ins = f"ALTER TABLE LABORATORIO_RAIOX DROP COLUMN [{col}];"
+                ins = f"ALTER TABLE LABORATORIO_RAIOX2 DROP COLUMN [{col}];"
 
                 if current_user.usr_role == "lab_pcp":
                     with engine.connect() as conn:
@@ -378,7 +387,7 @@ def controlar_modal_import(n, is_open):
 )
 def atualizar_colunas_tempo_real(is_open_add, is_open_remove):
     if((is_open_add) or (not is_open_add) or (is_open_remove) or (not is_open_remove)):
-        df_colunas = pd.DataFrame(pd.read_sql("select * from LABORATORIO_RAIOX", conn))
+        df_colunas = pd.DataFrame(pd.read_sql("select * from LABORATORIO_RAIOX2", conn))
         arr = [ col for col in df_colunas.columns ]
 
         return [arr, arr] 
@@ -465,7 +474,7 @@ def botao_importar_modal(n, data):
     if n is not None:
         df = DataFrame(data)
 
-        tableName = "LABORATORIO_RAIOX"
+        tableName = "LABORATORIO_RAIOX2"
         sql_insert = dataframe_to_sql_insert(df, tableName)
 
         for ins in sql_insert:
@@ -496,13 +505,13 @@ def excluir_registro(n, value, rows, colunas, date):
         else:
             if current_user.usr_role == "lab_pcp":
                 with engine.connect() as conn:
-                    df_exclusao = DataFrame(read_sql(f"SELECT * FROM LABORATORIO_RAIOX WHERE CAST(DATA AS DATE) = '{date}'", conn))
+                    df_exclusao = DataFrame(read_sql(f"SELECT * FROM LABORATORIO_RAIOX2 WHERE CAST(DATA AS DATE) = '{date}'", conn))
 
                     df = df_exclusao.iloc[rows[0]]
 
                     try:
                         id = df["CODIGO"]
-                        conn.execute(text(f"DELETE FROM LABORATORIO_RAIOX WHERE CODIGO = {id}"))
+                        conn.execute(text(f"DELETE FROM LABORATORIO_RAIOX2 WHERE CODIGO = {id}"))
                     except Exception as e:
                         print(f"Algo deu errado: {e}")
                     finally:
@@ -528,7 +537,7 @@ def atualizar_datas(n_add, n_import, n_delete):
     if n_delete is None:
         raise PreventUpdate
     if(n_add or n_import or n_delete):
-        ins = "select * from LABORATORIO_RAIOX"
+        ins = "select * from LABORATORIO_RAIOX2"
         df = pd.DataFrame(pd.read_sql(ins, conn))
         df_data = df.loc[:, ["DATA"]]
         menor_data = datetime.strptime(str(df_data["DATA"].min()), "%Y-%m-%d %H:%M:%S")

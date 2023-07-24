@@ -264,7 +264,7 @@ def popular_componente_aprop_paradas(value):
     ]
 )
 def cadastrar_apropriacao(n, gerador, tipo_codigo, grupo_codigo, codigo_falha, causa_aparente, componente, processo, sistema, equipamento, dt_inicio, tm_inicio, dt_fim, tm_fim, turno, operador, modo_falha, apropriador, obs):
-    ins1 = "insert into tbl_Paradas ("
+    ins1 = "insert into tbl_Paradas2 ("
     ins2 = ' values ('
 
     if n is None:

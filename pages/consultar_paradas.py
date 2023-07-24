@@ -242,35 +242,79 @@ def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codig
     if(n is None):
         raise PreventUpdate
     else:
-        if((dt_inicio is None) and (dt_fim is None)):
-            ins = "SELECT * FROM tbl_Paradas"
-        elif((dt_inicio is not None) and (dt_fim is None)):
-            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}'"
-        elif((dt_inicio is None) and (dt_fim is not None)):
-            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataFim AS DATE) <= '{dt_fim}'"
-        else:
-            ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}' AND CAST(DataFim AS DATE) <= '{dt_fim}'"
+        ins = "SELECT * FROM tbl_Paradas2"
 
-        df = pd.DataFrame(pd.read_sql(ins, conn))
+        # if((dt_inicio is None) and (dt_fim is None)):
+        #     ins = "SELECT * FROM tbl_Paradas"
+        # elif((dt_inicio is not None) and (dt_fim is None)):
+        #     ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}'"
+        # elif((dt_inicio is None) and (dt_fim is not None)):
+        #     ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataFim AS DATE) <= '{dt_fim}'"
+        # else:
+        #     ins = f"SELECT * FROM tbl_Paradas WHERE CAST(DataInicio AS DATE) >= '{dt_inicio}' AND CAST(DataFim AS DATE) <= '{dt_fim}'"
 
+        # usar pandas para filtrar datas
+
+        campos = []
+        cond = []
         if sist:
-            df = df[(df['Sistema'] == f'{sist}')]
+            # df = df[(df['Sistema'] == f'{sist}')]
+            campos.append("Sistema")
+            cond.append(f"Sistema = '{sist}'")
         if proc:
-            df = df[(df['Producao'] == f'{proc}')]
+            # df = df[(df['Producao'] == f'{proc}')]
+            campos.append("Producao")
+            cond.append(f"Producao = '{proc}'")
         if equip:
-            df = df[(df["Equipamento"] == f'{equip}')]
+            # df = df[(df["Equipamento"] == f'{equip}')]
+            campos.append("Equipamento")
+            cond.append(f"Equipamento = '{equip}'")
         if turno:
-            df = df[(df["Turno"] == f'{turno}')]
+            # df = df[(df["Turno"] == f'{turno}')]
+            campos.append("Turno")
+            cond.append(f"Turno = '{turno}'")
         if tipo_codigo:
-            df = df[(df["TipoCodigo"] == f'{tipo_codigo}')]
+            # df = df[(df["TipoCodigo"] == f'{tipo_codigo}')]
+            campos.append("TipoCodigo")
+            cond.append(f"TipoCodigo = '{tipo_codigo}'")
         if grupo_codigo:
-            df = df[(df["GrupoCodigo"] == f'{grupo_codigo}')]
+            # df = df[(df["GrupoCodigo"] == f'{grupo_codigo}')]
+            campos.append("GrupoCodigo")
+            cond.append(f"GrupoCodigo = '{grupo_codigo}'")
         if codigo_falha:
-            df = df[(df['CodigoFalha'] == f"{codigo_falha}")]
+            # df = df[(df['CodigoFalha'] == f"{codigo_falha}")]
+            campos.append("CodigoFalha")
+            cond.append(f"CodigoFalha = '{codigo_falha}'")
         if causa_aparente:
-            df = df[(df['CausaAparente'] == f"{causa_aparente}")]
+            # df = df[(df['CausaAparente'] == f"{causa_aparente}")]
+            campos.append("CausaAparente")
+            cond.append(f"CausaAparente = '{causa_aparente}'")
         if componente:
-            df = df[(df["Componente"] == f"{componente}")]
+            # df = df[(df["Componente"] == f"{componente}")]
+            campos.append("Componente")
+            cond.append(f"Componente = '{componente}'")
+
+        if sist or proc or equip or turno or tipo_codigo or grupo_codigo or codigo_falha or causa_aparente or componente:
+            campos_concat = " ,".join(campos)
+            cond_concat = " AND ".join(cond)
+            ins += f" ({campos_concat}) WHERE {cond_concat}"
+
+            if((dt_inicio is not None) and (dt_fim is None)):
+                ins += f" AND CAST(DataInicio AS DATE) >= '{dt_inicio}'"
+            elif((dt_inicio is None) and (dt_fim is not None)):
+                ins += f" AND CAST(DataFim AS DATE) <= '{dt_fim}'"
+            elif((dt_inicio is not None) and (dt_fim is not None)):
+                ins += f" AND CAST(DataInicio AS DATE) >= '{dt_inicio}' AND CAST(DataFim AS DATE) <= '{dt_fim}'"
+        else:
+            ins += " WHERE "
+            if((dt_inicio is not None) and (dt_fim is None)):
+                ins += f" CAST(DataInicio AS DATE) >= '{dt_inicio}'"
+            elif((dt_inicio is None) and (dt_fim is not None)):
+                ins += f" CAST(DataFim AS DATE) <= '{dt_fim}'"
+            elif((dt_inicio is not None) and (dt_fim is not None)):
+                ins += f" CAST(DataInicio AS DATE) >= '{dt_inicio}' AND CAST(DataFim AS DATE) <= '{dt_fim}'"
+
+        df = pd.read_sql(ins, conn)
         if colunas or len(colunas)!=0:
             df = df.loc[:, [ str(col) for col in colunas ]]
 

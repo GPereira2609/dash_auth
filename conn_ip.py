@@ -1,4 +1,4 @@
 USERNAME = "sa"
 PASSWORD = "adm@123"
-HOST = "192.168.1.4"
+HOST = "192.168.5.81"
 PORT = "1433"
