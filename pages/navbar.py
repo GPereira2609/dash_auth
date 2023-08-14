@@ -26,12 +26,13 @@ def nav():
 
                                 dbc.DropdownMenu([
                                     dbc.NavLink("MPAES", href="/lab/mpaes", active="exact"),
-                                    dbc.NavLink("RAIO-X", href="/lab/raiox", active="exact")
+                                    # dbc.NavLink("RAIO-X", href="/lab/raiox", active="exact")
                                 ], label="Laboratório", nav=True),
 
                                 dbc.DropdownMenu([
                                     dbc.NavLink("Registrar usuário", href="/register", active="exact"),
-                                    dbc.NavLink("Sair", href="/logout")
+                                    dbc.NavLink("Mudar senha", href="/alter_pwd"),
+                                    dbc.NavLink("Sair", href="/logout"),
                                 ], label="Usuário", nav=True),
                             ], pills=True, vertical=False, id='nav')
                         # ], style={"height": "100%", 'display': 'flex', 'flex-direction': 'row'}),
