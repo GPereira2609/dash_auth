@@ -8,6 +8,7 @@ from sqlalchemy import text
 from flask_login import current_user
 from functools import wraps
 from numpy import nan
+from datetime import date
 
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -56,6 +57,8 @@ maior_data = df_data["DATA"].max()
 maior_ano, maior_mes, maior_dia = int(str(maior_data)[0:4]), int(str(maior_data)[5:7]), int(str(maior_data)[8:10])
 maior_data = maior_data.strftime("%Y-%m-%d")
 
+hoje = date.today()
+
 def dataframe_to_sql_insert(df, table_name):
     columns = ', '.join(df.columns)
     values = ', '.join(['%s'] * len(df.columns))
@@ -73,10 +76,12 @@ def dataframe_to_sql_insert(df, table_name):
 
 content = html.Div([
 
+    dcc.Location(id="base_url_mpaes", refresh=True),
+
     dbc.Row([
         dbc.Card([
             html.Legend("Filtro por data"),
-            dcc.DatePickerSingle(id="datepicker_lab", display_format="DD/MM/YYYY", month_format="DD/MM/YYYY", min_date_allowed=menor_data, max_date_allowed=maior_data, date=maior_data, style={"margin-bottom": "5px"}),
+            dcc.DatePickerSingle(id="datepicker_lab", display_format="DD/MM/YYYY", month_format="DD/MM/YYYY", min_date_allowed=menor_data, max_date_allowed=hoje, date=hoje, style={"margin-bottom": "5px"}),
             dcc.Dropdown(id="dropdown_colunas_lab", options=[i for i in df.columns], multi=True, placeholder="Colunas", value=["DATA", "CODIGO"]),
             
         ], style={"width": "45%","height": "100%",'padding': '25px','align-self': 'center','display': 'flex','flex-direction': 'column', "justify-content": "center", 'margin-right': '5%'}),
@@ -84,7 +89,7 @@ content = html.Div([
         dbc.Card([
             html.Legend("Funções"),
             dbc.Row([
-                dbc.Button("Adicionar registro", id="add_registro_mpaes", style={"margin": "2px", "width": "40%"}),
+                dbc.Button("Declarar não recebimento", id="decl_mpaes", style={"margin": "2px", "width": "40%"}),
                 dbc.Button("Adicionar coluna", id="add_coluna_mpaes", style={"margin": "2px", "width": "40%"}),
             ], style={"display": "flex", "flex-direction": "row", "justify-content": "center"}),
             dbc.Row([
@@ -105,7 +110,7 @@ content = html.Div([
 
     dbc.Row([
         dbc.Card([
-            html.Legend("Tabela MPAES"),
+            html.Legend("Dados"),
             dash_table.DataTable(id="tabela_lab", data=[{}], style_table={"height": '300px', 'overflowY': 'auto'}, editable=False, style_cell={"textAlign": "left"}, style_header={"fontWeight": "bold"}, style_as_list_view=False)
         ],style=card_style)
     ], style={"height": "55%", "width": "80%", "margin": "10px"}),
@@ -193,6 +198,28 @@ def render_layout(user):
             ])
 
         ], id="modal_import_mpaes", is_open=False, size="l"),
+
+        dbc.Modal([
+
+            dbc.ModalHeader(dbc.ModalTitle("Declarar não recebimento")),
+
+            dbc.ModalBody([
+
+                html.Div([
+                    dcc.DatePickerSingle(id="data_n_receb", date=date.today(), month_format="DD/MM/YYYY", display_format="DD/MM/YYYY", style={"margin-bottom": "10px"}),
+
+                    dcc.Dropdown(id="hr_n_receb", options=[
+                        "02:00", "05:00", "08:00", "11:00", "14:00", "17:00", "20:00", "23:00"
+                    ])
+                ], className="container align-self-center")
+                
+            ]),
+
+            dbc.ModalFooter([
+                dbc.Button("Declarar", id="decl_n_receb", class_name="ms-auto")
+            ])
+
+        ], id="modal_decl_n_receb", is_open=False, size="l"),
 
         html.H1("", id="gateway_import_mpaes", hidden="hidden"),
         html.H1("", id="gateway_delete_mpaes", hidden="hidden"),
@@ -610,3 +637,29 @@ def insert_hora_pos_upload(value, data):
                 pass
 
             return df.to_dict(orient="records")
+        
+@app.callback(
+    Output("modal_decl_n_receb", "is_open"),
+    Input("decl_n_receb", "n_clicks"),
+    Input("decl_mpaes", "n_clicks"),
+    State("modal_decl_n_receb", "is_open"),
+    State("data_n_receb", "date"),
+    State("hr_n_receb", "value")
+)
+def controlar_modal_decl_n_receb(confirm, n, is_open, date, hour):
+    if n:
+        if not confirm:
+            return not is_open
+        else:
+            if date and hour:
+                try:
+                    with engine.connect() as conn:
+                        ins = f"INSERT INTO LABORATORIO2(DATA, TIPO_ANALISE, CODIGO_AMOSTRA) VALUES (CONVERT(DATETIME, '{date} {hour}:00.000', 103), 'NÃO RECEBIDA', 'NÃO RECEBIDA')"
+                        conn.execute(text(ins))
+                    
+                        return not is_open
+                except Exception as e:
+                    print(f"{e}")
+
+                    return is_open
+    return is_open 

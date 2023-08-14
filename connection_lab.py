@@ -14,7 +14,7 @@ conn_url_lab = URL.create(
     password=PASSWORD,
     host=HOST,
     port=PORT,
-    database="PCP_PLANTA",
+    database="BasePlanta",
     query=dict(driver="SQL Server")
 )
 
