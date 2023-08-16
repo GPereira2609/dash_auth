@@ -6,6 +6,7 @@ from werkzeug.security import check_password_hash
 from flask_login import login_user
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -66,12 +67,17 @@ def logar(n_clicks, user_login, password_login):
 
     try:
         session = Session(engine)
-        rst = session.query(User).filter(User.nm_usr==f"'{text(user_login)}'")
+        rst = session.query(User).filter(User.nm_usr==f"{text(user_login)}")
+        # rst2 = session.query(User).filter(User.nm_usr==f"'{text(user_login)}'")
         user = rst[0]
         # user = User.query.filter_by(nm_usr=f"'{text(user_login)}'").first()
         if user and password_login is not None:
             if check_password_hash(user.pwd_usr.replace("'", ""), password_login):
-                login_user(user)
+                # try:
+                #     app.logger.info(f"Usuário autenticado -> {user_login} às {datetime.now()}")
+                # except:
+                #     print("N foi possivel criar log")
+                login_user(user, remember=True, duration=timedelta(minutes=30))
                 return 'success'
             else:
                 return 'error_senha'

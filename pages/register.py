@@ -5,6 +5,7 @@ from app import *
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.express as px
+import sqlite3
 
 from werkzeug.security import generate_password_hash
 from sqlalchemy import text
@@ -41,8 +42,12 @@ def render_layout(register_state):
     message = ''
     if register_state == 'error':
         message = "Ocorreu algum erro"
+    elif register_state == "error_info":
+        message = "Preencha todos os campos"
     elif register_state == 'error_usuario_existente':
         message = "O usuário ou email utilizado já existe"
+    elif register_state == "ok":
+        message = "Usuário criado"
     else:
         message
     
@@ -54,7 +59,7 @@ def render_layout(register_state):
             dbc.Input(id="user_register", placeholder="Usuário", type="text", style={"margin-bottom": "10px"}),
             dbc.Input(id="password_register", placeholder="Senha", type="password", style={"margin-bottom": "10px"}),
             dbc.Input(id="email_register", placeholder="Email", type="email", style={"margin-bottom": "10px"}),
-            dcc.Dropdown(id="dropdown_registro", options=["aprop_admin", "aprop_operador", "lab_pcp", "lab_sgs"], style={"margin-bottom": "10px"}),
+            dcc.Dropdown(id="dropdown_registro", placeholder="Permissão de usuário", options=["aprop_admin", "aprop_operador", "lab_pcp", "lab_sgs"], style={"margin-bottom": "10px"}),
             dbc.Button("Registrar", id="register_button", style={"margin-bottom": "10px"}),
             dbc.Button("Voltar", id="botao_voltar")
         ], style={"display": "flex", "flex-direction": "column", "justify-content": "space-evenly", "padding": '10px', 'margin': "10px"}),
@@ -79,23 +84,46 @@ def render_layout(register_state):
 @admin_required
 def registrar_usuario(n_clicks, n_clicks2, user_register, password_register, email_register, role_register):
     if n_clicks is not None:
-        try:
-            if (user_register is None) or (password_register is None) or (email_register is None):
-                return 'error'
-            elif (user_register and password_register, email_register) is not None:
-                hashed_password = generate_password_hash(password_register, method="SHA256")
-                ins = Users_table.insert().values(nm_usr=f"'{user_register}'", pwd_usr=f"'{hashed_password}'", email_usr=f"'{email_register}'", usr_role=f"{role_register}")
-                # print(ins)
-                # ins = f"insert into usuarios (nm_usr, email_usr, pwd_usr) values ('{user_register}', '{email_register}', '{hashed_password}')"
-                conn = engine.connect()
-                conn.execute(ins)
-                conn.commit()
-                conn.close()
-                return ''
-        except:
-            return 'error_usuario_existente'
+        if(user_register and password_register and email_register) is not None:
+            with sqlite3.connect("dados.sqlite") as conn:
+                ins_verify = f"SELECT * FROM usuarios WHERE nm_usr = '{user_register}' OR email_usr = '{email_register}';"
+                cursor = conn.cursor()
+                cursor.execute(ins_verify)
+                rst = cursor.fetchone()
+                if rst == None:
+                    user = user_register
+                    pwd = generate_password_hash(password_register, method="SHA256")
+                    email = email_register
+                    role = role_register
+                    ins = f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('{user}', '{pwd}', '{email}', '{role}')"
+                    cursor.execute(ins)
+
+                    return "ok"
+                else:
+                    return "error_usuario_existente"
+        else:
+            return "error_info"
     if n_clicks2 is not None:
-        return ''
+        return  ""
+
+    # if n_clicks is not None:
+    #     try:
+    #         if (user_register is None) or (password_register is None) or (email_register is None):
+    #             return 'error_info'
+    #         elif (user_register and password_register and email_register) is not None:
+    #             hashed_password = generate_password_hash(password_register, method="SHA256")
+    #             ins = Users_table.insert().values(nm_usr=user_register, pwd_usr=hashed_password, email_usr=email_register, usr_role=role_register)
+    #             # print(ins)
+    #             # ins = f"insert into usuarios (nm_usr, email_usr, pwd_usr) values ('{user_register}', '{email_register}', '{hashed_password}')"
+    #             conn = engine.connect()
+    #             conn.execute(ins)
+    #             conn.commit()
+    #             conn.close()
+    #             return ''
+    #     except:
+    #         return 'error_usuario_existente'
+    # if n_clicks2 is not None:
+    #     return ''
 
 
    
