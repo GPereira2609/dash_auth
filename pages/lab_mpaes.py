@@ -16,13 +16,7 @@ import io
 import base64
 import re
 
-def admin_required(func):
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'lab_pcp':
-            return ''
-        return func(*args, **kwargs)
-    return decorated_view
+from permits import lab_admin_required, lab_required
 
 card_style = {
     "width": "100%",
@@ -221,6 +215,21 @@ def render_layout(user):
 
         ], id="modal_decl_n_receb", is_open=False, size="l"),
 
+        dbc.Modal([
+        dbc.ModalHeader(dbc.ModalTitle("Excluir registros por data e hora")),
+        dbc.ModalBody([
+            html.Div([
+                dcc.DatePickerSingle(id="data_excluir", date=date.today(), month_format="DD/MM/YYYY", display_format="DD/MM/YYYY", style={"margin-bottom": "10px"}),
+                dcc.Dropdown(id="hora_excluir", options=[
+                    "02:00", "05:00", "08:00", "11:00", "14:00", "17:00", "20:00", "23:00"
+                ], placeholder="Selecione um horário")
+            ], className="conainer align-self-center")
+        ]),
+        dbc.ModalFooter([
+            dbc.Button("Excluir", id="botao_excluir_modal", class_name="ms-auto")
+        ])
+    ], id="modal_excluir", is_open=False, size="l"),
+
         html.H1("", id="gateway_import_mpaes", hidden="hidden"),
         html.H1("", id="gateway_delete_mpaes", hidden="hidden"),
 
@@ -229,6 +238,8 @@ def render_layout(user):
                 content
         ], style={"height": '85%', 'width': '100%', 'background-color': "white"})
     ], style={'background-color': "white", 'height': '100vh', 'width': '100vw'})
+
+    
 
     return layout
 
@@ -260,6 +271,7 @@ def preencher_tabela(data, colunas):
     Output("tabela_lab", "row_selectable"),
     Input("selectable_check", "value"),
 )
+# @lab_admin_required
 def ativar_selectable(value):
     if(current_user.usr_role == "lab_pcp"):
         return None if((value is None) or (len(value)==0)) else "single"
@@ -270,6 +282,7 @@ def ativar_selectable(value):
     Output("tabela_lab", "editable"),
     Input("editable_check", "value")
 )
+# @lab_admin_required
 def ativar_editable(value):
     return False if((value is None) or (len(value)==0)) else True
 
@@ -336,6 +349,7 @@ def controlar_modal_add_coluna(btn_abrir, btn_fechar, btn_atualizar, is_open, no
     State("modal_remove_coluna_mpaes", "is_open"),
     State("coluna_remover_mpaes", "value")
 )
+@lab_admin_required
 def controlar_modal_remover_coluna(abrir, fechar, confirmar, is_open, coluna):
     if confirmar:
         if coluna is not None:
@@ -663,3 +677,28 @@ def controlar_modal_decl_n_receb(confirm, n, is_open, date, hour):
 
                     return is_open
     return is_open 
+
+@app.callback(
+    Output("modal_excluir", "is_open"),
+    Input("exc_registro_mpaes", "n_clicks"),
+    Input("botao_excluir_modal", "n_clicks"),
+    State("modal_excluir", "is_open"),
+    State("data_excluir", "date"),
+    State("hora_excluir", "value")
+)
+def controlar_modal_excluir(btn, btn_excluir, is_open, date, hour):
+    if btn_excluir:
+        if(date and hour):
+            ins = f"DELETE FROM LABORATORIO2 WHERE DATA = CONVERT(VARCHAR, '{date} {hour}:00.000', 103);"
+            try:
+                print(ins)
+                with engine.connect() as conn:
+                    conn.execute(text(ins))
+                return not is_open
+            except Exception as e:
+                print("Exception: ", e)
+                return is_open
+
+    if btn:
+        return not is_open
+    return is_open

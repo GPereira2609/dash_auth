@@ -1,25 +1,47 @@
-import sqlite3
+from flask_login import current_user
+from functools import wraps
 
-from werkzeug.security import check_password_hash, generate_password_hash
+# Verificação de admin
+def admin_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.usr_role != "lab_pcp" or current_user.usr_role != "aprop_admin":
+            return ''
+        return func(*args, **kwargs)
+    return decorated_view
 
-conn = sqlite3.connect("dados.sqlite")
+# Verificação de laboratório
+def lab_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.usr_role != "lab_pcp" or current_user.usr_role != "lab_sgs":
+            return ''
+        return func(*args, **kwargs)
+    return decorated_view
 
-cursor = conn.cursor()
-# ins = """
-#     update usuarios set usr_role = 'aprop_admin' where id_usr = 3;
-# """¨
-senha = generate_password_hash("123", method="SHA256")
-instructions = [
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('aprop_operador', '{senha}', 'teste@gmail.com', 'aprop_operador');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('aprop_admin', '{senha}', 'teste1@gmail.com', 'aprop_admin');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('lab_pcp', '{senha}', 'teste2@gmail.com', 'lab_pcp');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('lab_sgs', '{senha}', 'teste3@gmail.com', 'lab_sgs');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('gabriel.pereira', '{senha}', 'gabriel.pereira@gmail.com', 'aprop_admin');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('airon.nobre', '{senha}', 'airon.nobre@vale-verde.com', 'aprop_admin');",
-    f"INSERT INTO usuarios (nm_usr, pwd_usr, email_usr, usr_role) VALUES ('teste_sgs', '{senha}', 'teste.sgs@geosol.com', 'lab_sgs');"
-]
+# Verificação de admin laboratório
+def lab_admin_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.usr_role != "lab_pcp":
+            return ''
+        return func(*args, **kwargs)
+    return decorated_view
 
-for ins in instructions:
-    cursor.execute(ins)
-    conn.commit()
-conn.close()
+# Verificação de paradas
+def aprop_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.usr_role != "aprop_admin" or current_user.usr_role != "aprop_operador":
+            return ''
+        return func(*args, **kwargs)
+    return decorated_view
+
+# Verificação de admin paradas
+def aprop_admin_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if current_user.usr_role != "aprop_admin":
+            return ''
+        return func(*args, **kwargs)
+    return decorated_view

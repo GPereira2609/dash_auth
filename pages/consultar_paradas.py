@@ -8,15 +8,9 @@ from functools import wraps
 
 from globals import *
 from pages import navbar
+from datetime import date, timedelta
 
-def admin_required(func):
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'aprop_admin':
-            return ''
-        return func(*args, **kwargs)
-    return decorated_view
-
+from permits import aprop_admin_required
 
 card_style = {
     'width': '90%',
@@ -40,11 +34,13 @@ card_style2= {
     'flex-direction': 'column'
 }
 
+hoje = date.today()
+anteontem = hoje-timedelta(days=2)
 
 def render_layout(user):
-    username = user.nm_usr
+    username = user.nm_usr 
 
-    df = DataFrame(read_sql("select * from tbl_Paradas", engine.connect()))
+    df = DataFrame(read_sql("select * from tbl_Paradas2", engine.connect()))
     
     layout = html.Div([
         dcc.Location(id="consultar_paradas_base_url"),
@@ -119,12 +115,12 @@ def render_layout(user):
                                 html.Legend("Período"),
                                 dbc.Row([
                                     dbc.Label("Início: "),
-                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_inicio_consultar_paradas", min_date_allowed=menor_data_inicio())
+                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_inicio_consultar_paradas", min_date_allowed=menor_data_inicio(), date=hoje)
                             ]),
 
                                 dbc.Row([
                                     dbc.Label("Fim: "),
-                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_fim_consultar_paradas", min_date_allowed=menor_data_fim())
+                                    dcc.DatePickerSingle(display_format="DD/MM/YYYY", id="data_fim_consultar_paradas", min_date_allowed=menor_data_fim(), date=anteontem)
                             ]),
 
                                 dbc.Row([
@@ -297,7 +293,7 @@ def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codig
         if sist or proc or equip or turno or tipo_codigo or grupo_codigo or codigo_falha or causa_aparente or componente:
             campos_concat = " ,".join(campos)
             cond_concat = " AND ".join(cond)
-            ins += f" ({campos_concat}) WHERE {cond_concat}"
+            ins += f" WHERE {cond_concat}"
 
             if((dt_inicio is not None) and (dt_fim is None)):
                 ins += f" AND CAST(DataInicio AS DATE) >= '{dt_inicio}'"
@@ -317,6 +313,7 @@ def consultar_paradas(n, sist, proc, equip, dt_inicio, dt_fim, turno, tipo_codig
         df = pd.read_sql(ins, conn)
         if colunas or len(colunas)!=0:
             df = df.loc[:, [ str(col) for col in colunas ]]
+        df = df.sort_values(by="DataInicio", ascending=False)
 
         values = df.to_dict(orient='records')
         cols = [ {"name": str(col), "id": str(col)} for col in df.columns ]
@@ -456,14 +453,14 @@ def mostrar_id_consultar_paradas(rows, tabela):
     State("tabela_dados", "selected_rows"),
     State("tabela_dados", "data")
 )
-@admin_required
+@aprop_admin_required
 def excluir_consultar_paradas(n, rows, tabela):
     if n is None:
         raise PreventUpdate
     if n is not None:
         if len(rows) != 0:
             id = str(tabela[rows[0]]["Id"])
-            ins = f"delete from tbl_Paradas where Id = {int(id)}"
+            ins = f"delete from tbl_Paradas2 where Id = {int(id)}"
             with engine.connect() as conn:
                     conn.execute(text(ins))
                     conn.commit()
@@ -484,7 +481,7 @@ def copiar_consultar_paradas(n, rows, tabela):
 
             id = str(tabela[rows[0]]["Id"])
 
-            ins = f"insert into tbl_Paradas(Validade, Producao, Sistema, Equipamento, DataInicio, DataFim, EqpGerador, TipoCodigo, GrupoCodigo, CodigoFalha, Turno, CausaAparente, Operador, Observacao, Componente, ModoFalha, Apropriador) select Validade, Producao, Sistema, Equipamento, DataInicio, DataFim, EqpGerador, TipoCodigo, GrupoCodigo, CodigoFalha, Turno, CausaAparente, Operador, Observacao, Componente, ModoFalha, Apropriador from tbl_Paradas where ID = {id}"
+            ins = f"insert into tbl_Paradas2(Validade, Producao, Sistema, Equipamento, DataInicio, DataFim, EqpGerador, TipoCodigo, GrupoCodigo, CodigoFalha, Turno, CausaAparente, Operador, Observacao, Componente, ModoFalha, Apropriador) select Validade, Producao, Sistema, Equipamento, DataInicio, DataFim, EqpGerador, TipoCodigo, GrupoCodigo, CodigoFalha, Turno, CausaAparente, Operador, Observacao, Componente, ModoFalha, Apropriador from tbl_Paradas2 where ID = {id}"
             
 
             with engine.connect() as conn:
@@ -504,7 +501,7 @@ def copiar_consultar_paradas(n, rows, tabela):
 def mostrar_input_id_atual(value, rows, tabela):
     if value is not None:
         id = tabela[rows[0]]["Id"]
-        ins = f"select {value} from tbl_Paradas where Id = {int(id)}"
+        ins = f"select {value} from tbl_Paradas2 where Id = {int(id)}"
         df = DataFrame(read_sql(ins, conn))
         
         return df.values[0][0]

@@ -11,15 +11,6 @@ from pages import navbar
 
 import time
 
-def admin_required(func):
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-        if current_user.usr_role != 'admin':
-            return ''
-        return func(*args, **kwargs)
-    return decorated_view
-
-
 card_style = {
     'margin-top': '25px',
     'width': '500px',
